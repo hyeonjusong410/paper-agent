@@ -1,10 +1,11 @@
-import sqlite3
 import pandas as pd
 import smtplib
 import google.generativeai as genai
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
+import psycopg2
+import os
 
 
 from dotenv import load_dotenv
@@ -22,7 +23,7 @@ TREND_KEYWORDS = [
 MAJOR_ORGS = ["google","deepmind","openai","meta","microsoft","anthropic","deepseek","stanford","mit","berkeley"]
 
 def get_weekly_papers():
-    conn = sqlite3.connect("papers.db")
+    conn = psycopg2.connect(os.environ.get("DATABASE_URL"))
     df = pd.read_sql("""
         SELECT title, authors, abstract, category, citations, url
         FROM papers
