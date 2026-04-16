@@ -1,10 +1,12 @@
 from flask import Flask, jsonify, render_template, request
 import sqlite3
 import pandas as pd
-from collections import Counter
+from collections import Counter, fetch_arxiv_papers, save_papers
 import re
 from agent import run_agent
 import os
+from mailer import send_email
+from apscheduler.schedulers.background import BackgroundScheduler
 
 app = Flask(__name__)
 
@@ -166,6 +168,31 @@ def collect():
 @app.route("/api/send_email", methods=["POST"])
 def send_email():
     return jsonify({"message": "메일 발송 기능은 곧 추가됩니다!"})
+
+scheduler = BackgroundScheduler()
+
+# 매일 오전 9시 논문 자동 수집
+scheduler.add_job(
+    lambda: save_papers(fetch_arxiv_papers()),
+    trigger="cron",
+    hour=9,
+    minute=0
+)
+
+# 매주 금요일 오전 9시 메일 자동 발송
+scheduler.add_job(
+    lambda: send_email(
+        to_email=os.environ.get("MAIL_TO"),
+        gmail_address=os.environ.get("GMAIL_ADDRESS"),
+        gmail_password=os.environ.get("GMAIL_PASSWORD")
+    ),
+    trigger="cron",
+    day_of_week="fri",
+    hour=9,
+    minute=0
+)
+
+scheduler.start()
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
