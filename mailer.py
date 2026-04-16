@@ -11,7 +11,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-GEMINI_API_KEY = "GEMINI_API_KEY"
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 TREND_KEYWORDS = [
     "transformer","attention","llm","gpt","bert","finetuning","alignment","rlhf",
     "agent","agentic","reasoning","planning","autonomous","multiagent",
@@ -27,7 +27,7 @@ def get_weekly_papers():
     df = pd.read_sql("""
         SELECT title, authors, abstract, category, citations, url
         FROM papers
-        WHERE published >= date('now', '-7 days')
+        WHERE published >= CURRENT_DATE - INTERVAL '7 days'
     """, conn)
     conn.close()
     return df
