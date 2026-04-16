@@ -135,7 +135,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     <div class="card">
       <div class="card-title">주목 논문</div>
       <div class="tab-row">
-        <div class="tab on" onclick="switchTab(this,'hot')">🔥 인용 급등</div>
+        <div class="tab on" onclick="switchTab(this,'hot')">🔥 트렌드 순</div>
         <div class="tab" onclick="switchTab(this,'new')">✨ 신규</div>
       </div>
       <div class="paper-list" id="paperList">
@@ -314,7 +314,8 @@ function renderPapers(papers) {
       <div class="paper-meta">
         <span class="paper-authors">${p.authors}</span>
         <span class="paper-tag tag-default">${p.category}</span>
-        <span class="cite ${hot}">↑ ${p.citations} citations</span>
+        <span class="cite">🔥 ${p.score}점</span>
+        ${(p.matched_kw || []).map(kw => `<span class="paper-tag tag-default">${kw}</span>`).join('')}
       </div>
     </div>`;
   }).join('');

@@ -100,11 +100,28 @@ def stats():
     if df.empty:
         return jsonify({"total": 0, "error": "데이터 없음"})
 
+    def keyword_score(abstract):
+        if not abstract:
+            return 0, []
+        text = abstract.lower()
+        matched = []
+        score = 0
+        for kw in TREND_KEYWORDS:
+            cnt = text.count(kw)
+            if cnt > 0:
+                score += cnt
+                matched.append(kw)
+        return score, matched[:3]
+
     daily = df.groupby(df["published"].dt.strftime("%Y-%m-%d")).size().to_dict()
     categories = df["category"].value_counts().head(6).to_dict()
     keywords = extract_keywords(df["abstract"].dropna().tolist())
-    top_papers = df.nlargest(10, "citations")[
-        ["title","authors","category","citations","url","published"]
+
+    df["score"] = df["abstract"].apply(lambda x: keyword_score(x)[0])
+    df["matched_kw"] = df["abstract"].apply(lambda x: keyword_score(x)[1])
+
+    top_papers = df[df["score"] > 0].nlargest(20, "score")[
+        ["title","authors","category","citations","url","published","score","matched_kw"]
     ].to_dict("records")
     for p in top_papers:
         p["published"] = str(p["published"])[:10]
