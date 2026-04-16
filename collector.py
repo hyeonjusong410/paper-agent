@@ -20,11 +20,11 @@ def init_db():
     conn.commit()
     return conn
 
-def fetch_arxiv_papers(max_results=3000):
+def fetch_arxiv_papers(max_results=500):
     client = arxiv.Client()
     search = arxiv.Search(
     query="cat:cs.AI OR cat:cs.LG OR cat:cs.CL",
-    max_results=3000,  
+    max_results=500,  
     sort_by=arxiv.SortCriterion.SubmittedDate
 )
     papers = []
