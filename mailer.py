@@ -7,6 +7,9 @@ from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 
 
+from dotenv import load_dotenv
+load_dotenv()
+
 GEMINI_API_KEY = "GEMINI_API_KEY"
 TREND_KEYWORDS = [
     "transformer","attention","llm","gpt","bert","finetuning","alignment","rlhf",

@@ -3,6 +3,8 @@ import google.generativeai as genai
 import sqlite3
 import pandas as pd
 
+from dotenv import load_dotenv
+load_dotenv()
 
 def get_papers_for_analysis():
     conn = sqlite3.connect("papers.db")

@@ -3,3 +3,4 @@ papers.db-journal
 venv/
 __pycache__/
 *.pyc
+.env
