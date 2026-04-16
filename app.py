@@ -11,9 +11,11 @@ import psycopg2
 app = Flask(__name__)
 
 # DB 초기화
-from collector import init_db
-init_db()
-
+try:
+    from collector import init_db
+    init_db()
+except Exception as e:
+    print(f"DB 초기화 오류: {e}")
 def get_conn():
     return psycopg2.connect(os.environ.get("DATABASE_URL"))
 
