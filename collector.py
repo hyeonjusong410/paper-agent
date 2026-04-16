@@ -30,7 +30,7 @@ def init_db():
     cur.close()
     conn.close()
 
-def fetch_arxiv_papers(max_results=100):
+def fetch_arxiv_papers(max_results=200):
     client = arxiv.Client()
     search = arxiv.Search(
         query="cat:cs.AI OR cat:cs.LG OR cat:cs.CL",
