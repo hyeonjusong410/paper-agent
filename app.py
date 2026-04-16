@@ -17,19 +17,36 @@ def get_df(days=7):
         df = df[df["published"] >= cutoff]
     return df
 
-def extract_keywords(texts, top_n=6):
-    stopwords = {"the","a","an","of","in","to","and","for","with","on","is",
-                 "are","was","were","we","our","by","from","that","this","which",
-                 "be","as","at","it","its","or","can","has","have","not","also",
-                 "but","using","based","via","show","shows","paper","propose",
-                 "proposed","results","data","approach","task","tasks","large",
-                 "high","new","two","one","used","train","trained","performance"}
-    words = []
-    for text in texts:
-        tokens = re.findall(r'\b[a-z]{4,}\b', text.lower())
-        words += [w for w in tokens if w not in stopwords]
-    return Counter(words).most_common(top_n)
+TREND_KEYWORDS = [
+    # LLM / 언어모델
+    "transformer","attention","llm","gpt","bert","finetuning","alignment","rlhf",
+    "instruct","prompt","context","tokenizer","embedding","pretraining",
+    # 에이전트
+    "agent","agentic","reasoning","planning","tool","autonomous","workflow",
+    "multiagent","reflection","memory","action",
+    # 비전
+    "diffusion","multimodal","vision","image","video","generation","stable",
+    "controlnet","inpainting","segmentation","detection","recognition",
+    # 강화학습
+    "reinforcement","reward","policy","environment","simulation","robot",
+    # 안전성
+    "safety","hallucination","bias","robustness","jailbreak","watermark",
+    # 최신 트렌드
+    "quantum","mamba","mixture","experts","retrieval","rag","embodied",
+    "knowledge","graph","reasoning","chain","thought","inference","scaling",
+    "efficient","compression","distillation","pruning","quantization",
+    # 멀티모달
+    "audio","speech","3d","depth","point","cloud","lidar",
+]
 
+def extract_keywords(texts, top_n=6):
+    counts = {kw: 0 for kw in TREND_KEYWORDS}
+    for text in texts:
+        text_lower = text.lower()
+        for kw in TREND_KEYWORDS:
+            counts[kw] += text_lower.count(kw)
+    sorted_kw = sorted(counts.items(), key=lambda x: x[1], reverse=True)
+    return [(kw, cnt) for kw, cnt in sorted_kw if cnt > 0][:top_n]
 def extract_authors(df, top_n=5):
     author_count = Counter()
     for authors in df["authors"]:

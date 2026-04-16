@@ -25,7 +25,7 @@ def fetch_arxiv_papers(max_results=3000):
     search = arxiv.Search(
     query="cat:cs.AI OR cat:cs.LG OR cat:cs.CL",
     max_results=3000,  
-    sort_by=arxiv.SortCriterion.Relevance  # 관련도순으로 변경
+    sort_by=arxiv.SortCriterion.SubmittedDate
 )
     papers = []
     for result in client.results(search):
