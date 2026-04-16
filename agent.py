@@ -3,6 +3,7 @@ import google.generativeai as genai
 import sqlite3
 import pandas as pd
 
+
 def get_papers_for_analysis():
     conn = sqlite3.connect("papers.db")
     df = pd.read_sql("""
