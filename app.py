@@ -4,6 +4,7 @@ import pandas as pd
 from collections import Counter
 import re
 from agent import run_agent
+import os
 
 app = Flask(__name__)
 
@@ -163,4 +164,5 @@ def send_email():
     return jsonify({"message": "메일 발송 기능은 곧 추가됩니다!"})
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
