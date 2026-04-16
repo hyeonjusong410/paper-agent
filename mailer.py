@@ -6,7 +6,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 
-GEMINI_API_KEY = "AQ.Ab8RN6IXgPu5tJtrKLaz2A7lUcjtdoErM4xI_s5i9lDn7EZJ_A"
+GEMINI_API_KEY = "GEMINI_API_KEY"
 TREND_KEYWORDS = [
     "transformer","attention","llm","gpt","bert","finetuning","alignment","rlhf",
     "agent","agentic","reasoning","planning","autonomous","multiagent",

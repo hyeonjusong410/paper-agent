@@ -15,7 +15,7 @@ def get_papers_for_analysis():
     return df
 
 def run_agent(user_query: str) -> str:
-    genai.configure(api_key="AQ.Ab8RN6IXgPu5tJtrKLaz2A7lUcjtdoErM4xI_s5i9lDn7EZJ_A")
+    genai.configure(api_key="GEMINI_API_KEY")
     model = genai.GenerativeModel("gemini-2.0-flash-lite")
 
     df = get_papers_for_analysis()
