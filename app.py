@@ -8,6 +8,10 @@ import os
 
 app = Flask(__name__)
 
+# DB 초기화
+from collector import init_db
+init_db()
+
 def get_df(days=7):
     conn = sqlite3.connect("papers.db")
     df = pd.read_sql("SELECT * FROM papers", conn)
