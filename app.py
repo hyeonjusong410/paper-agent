@@ -170,7 +170,16 @@ def collect():
 
 @app.route("/api/send_email", methods=["POST"])
 def send_email_route():
-    return jsonify({"message": "메일 발송 기능은 곧 추가됩니다!"})
+    try:
+        from mailer import send_email
+        send_email(
+            to_email=os.environ.get("MAIL_TO"),
+            gmail_address=os.environ.get("GMAIL_ADDRESS"),
+            gmail_password=os.environ.get("GMAIL_PASSWORD")
+        )
+        return jsonify({"message": "✅ 메일 발송 완료!"})
+    except Exception as e:
+        return jsonify({"message": f"❌ 오류: {str(e)}"})
 
 scheduler = BackgroundScheduler()
 

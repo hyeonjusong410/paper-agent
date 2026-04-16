@@ -185,7 +185,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     <div class="card">
       <div class="card-title">주간 메일 미리보기</div>
       <div class="email-preview">
-        <div class="email-header" id="emailHeader">📬 매주 월요일 08:00 자동 발송</div>
+        <div class="email-header" id="emailHeader">📬 매주 금요일 06:00 자동 발송</div>
         <div class="email-body" id="emailBody">
           <div class="email-section">로딩중...</div>
         </div>
@@ -395,7 +395,7 @@ function renderHeatmap(heatmap) {
 function renderEmail(d) {
   const now = new Date();
   const week = Math.ceil(now.getDate() / 7);
-  document.getElementById('emailHeader').textContent = `📬 매주 금요일 08:00 자동 발송`;
+  document.getElementById('emailHeader').textContent = `📬 매주 금요일 06:00 자동 발송`;
   const top3 = (d.top_papers || []).slice(0,3);
   const kws = (d.keywords || []).slice(0,2).map(k => k[0]).join(', ');
   document.getElementById('emailBody').innerHTML = `
