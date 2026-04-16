@@ -166,7 +166,7 @@ def agent():
 @app.route("/api/collect", methods=["POST"])
 def collect():
     from collector import fetch_arxiv_papers, save_papers
-    papers = fetch_arxiv_papers(max_results=100)
+    papers = fetch_arxiv_papers(max_results=200)
     save_papers(papers)
     return jsonify({"message": "수집 완료"})
 
