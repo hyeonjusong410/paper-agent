@@ -1,7 +1,8 @@
 from flask import Flask, jsonify, render_template, request
 import sqlite3
 import pandas as pd
-from collections import Counter, fetch_arxiv_papers, save_papers
+from collections import Counter
+from collector import fetch_arxiv_papers, save_papers
 import re
 from agent import run_agent
 import os
