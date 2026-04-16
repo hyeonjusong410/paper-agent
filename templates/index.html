@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PaperAgent — AI 논문 트렌드 대시보드</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f8f6; color: #1a1a1a; }
+.dash { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+.topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 12px; }
+.topbar-left { display: flex; align-items: center; gap: 12px; }
+.logo { font-size: 18px; font-weight: 600; color: #1a1a1a; letter-spacing: -0.3px; }
+.logo span { color: #185FA5; }
+.badge-live { font-size: 11px; background: #EAF3DE; color: #3B6D11; padding: 3px 8px; border-radius: 20px; }
+.controls { display: flex; gap: 8px; flex-wrap: wrap; }
+.ctrl-btn { font-size: 12px; padding: 5px 14px; border: 0.5px solid #ccc; border-radius: 20px; background: #fff; color: #666; cursor: pointer; transition: all 0.15s; }
+.ctrl-btn.active, .ctrl-btn:hover { background: #185FA5; color: #fff; border-color: #185FA5; }
+.metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 1.25rem; }
+.metric { background: #f0efe9; border-radius: 8px; padding: 14px 16px; }
+.metric-label { font-size: 11px; color: #888; margin-bottom: 6px; letter-spacing: 0.3px; text-transform: uppercase; }
+.metric-val { font-size: 24px; font-weight: 500; color: #1a1a1a; }
+.metric-sub { font-size: 11px; color: #3B6D11; margin-top: 3px; }
+.metric-sub.down { color: #A32D2D; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.grid3 { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px; }
+.card { background: #fff; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 12px; padding: 1rem 1.25rem; }
+.card-title { font-size: 11px; font-weight: 500; color: #888; margin-bottom: 14px; letter-spacing: 0.5px; text-transform: uppercase; }
+.tab-row { display: flex; gap: 4px; margin-bottom: 14px; }
+.tab { font-size: 12px; padding: 4px 10px; border-radius: 6px; cursor: pointer; color: #888; }
+.tab.on { background: #f0efe9; color: #1a1a1a; font-weight: 500; }
+.paper-list { display: flex; flex-direction: column; gap: 10px; }
+.paper { border-bottom: 0.5px solid rgba(0,0,0,0.08); padding-bottom: 10px; cursor: pointer; transition: opacity 0.15s; }
+.paper:hover { opacity: 0.75; }
+.paper:last-child { border-bottom: none; padding-bottom: 0; }
+.paper-title { font-size: 13px; font-weight: 500; color: #1a1a1a; line-height: 1.4; margin-bottom: 4px; }
+.paper-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.paper-authors { font-size: 11px; color: #888; }
+.paper-tag { font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 500; }
+.tag-cs\.AI { background: #E6F1FB; color: #0C447C; }
+.tag-cs\.LG { background: #EEEDFE; color: #3C3489; }
+.tag-cs\.CL { background: #E1F5EE; color: #085041; }
+.tag-cs\.CV { background: #FAEEDA; color: #633806; }
+.tag-cs\.RO { background: #FCEBEB; color: #791F1F; }
+.tag-default { background: #f0efe9; color: #444; }
+.cite { font-size: 11px; color: #888; }
+.cite-hot { color: #D85A30; font-weight: 500; }
+.trend-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.trend-kw { font-size: 13px; color: #1a1a1a; min-width: 120px; }
+.trend-bar-wrap { flex: 1; margin: 0 12px; height: 6px; background: #f0efe9; border-radius: 3px; overflow: hidden; }
+.trend-bar { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+.trend-pct { font-size: 12px; color: #888; min-width: 36px; text-align: right; }
+.author-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; flex-shrink: 0; }
+.author-info { flex: 1; }
+.author-name { font-size: 13px; font-weight: 500; color: #1a1a1a; }
+.author-org { font-size: 11px; color: #888; }
+.author-count { font-size: 12px; color: #888; }
+.inst-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.inst-name { font-size: 12px; color: #1a1a1a; min-width: 100px; }
+.inst-bar-wrap { flex: 1; margin: 0 10px; height: 8px; background: #f0efe9; border-radius: 4px; overflow: hidden; }
+.inst-bar { height: 100%; border-radius: 4px; }
+.inst-n { font-size: 12px; color: #888; min-width: 28px; text-align: right; }
+.summary-box { background: #E6F1FB; border-radius: 8px; padding: 12px 14px; margin-top: 10px; }
+.summary-text { font-size: 12px; color: #0C447C; line-height: 1.6; }
+.summary-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #185FA5; font-weight: 500; margin-bottom: 6px; }
+.email-preview { border: 0.5px solid rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; margin-top: 8px; }
+.email-header { background: #f0efe9; padding: 10px 14px; font-size: 12px; color: #888; border-bottom: 0.5px solid rgba(0,0,0,0.08); }
+.email-body { padding: 12px 14px; font-size: 12px; color: #1a1a1a; line-height: 1.7; }
+.email-section { font-weight: 500; margin: 8px 0 4px; }
+.ai-chat { display: flex; flex-direction: column; gap: 8px; }
+.ai-input-row { display: flex; gap: 8px; }
+.ai-input { flex: 1; font-size: 12px; padding: 8px 12px; border: 0.5px solid rgba(0,0,0,0.15); border-radius: 8px; outline: none; }
+.ai-btn { font-size: 12px; padding: 8px 16px; background: #185FA5; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
+.ai-result { background: #E6F1FB; border-radius: 8px; padding: 12px 14px; font-size: 12px; color: #0C447C; line-height: 1.6; min-height: 60px; }
+.loading { color: #888; font-style: italic; }
+#heatmapContainer { display: flex; flex-direction: column; gap: 6px; }
+@media (max-width: 768px) {
+  .metrics { grid-template-columns: repeat(2, 1fr); }
+  .grid2, .grid3 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="dash">
+
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="logo">paper<span>agent</span></div>
+      <div class="badge-live" id="liveStatus">● 로딩중</div>
+    </div>
+    <div class="controls">
+      <button class="ctrl-btn active" onclick="setRange(this,'7d')">7일</button>
+      <button class="ctrl-btn" onclick="setRange(this,'1m')">1개월</button>
+      <button class="ctrl-btn" onclick="setRange(this,'3m')">3개월</button>
+      <button class="ctrl-btn" onclick="setRange(this,'all')">전체</button>
+      <button class="ctrl-btn" style="border-color:#185FA5;color:#185FA5;" onclick="refreshPapers()">🔄 논문 수집</button>
+    </div>
+  </div>
+
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-label">전체 논문</div>
+      <div class="metric-val" id="m1">—</div>
+      <div class="metric-sub" id="m1sub">로딩중...</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">주목 논문</div>
+      <div class="metric-val" id="m2">—</div>
+      <div class="metric-sub">인용수 10 이상</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">활성 연구자</div>
+      <div class="metric-val" id="m3">—</div>
+      <div class="metric-sub">고유 저자 수</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">평균 인용수</div>
+      <div class="metric-val" id="m4">—</div>
+      <div class="metric-sub">전체 평균</div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <div class="card">
+      <div class="card-title">일별 논문 게재 추이</div>
+      <div style="position:relative;width:100%;height:160px;">
+        <canvas id="trendChart" role="img" aria-label="일별 논문 게재 추이"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid3">
+    <div class="card">
+      <div class="card-title">주목 논문</div>
+      <div class="tab-row">
+        <div class="tab on" onclick="switchTab(this,'hot')">🔥 인용 급등</div>
+        <div class="tab" onclick="switchTab(this,'new')">✨ 신규</div>
+      </div>
+      <div class="paper-list" id="paperList">
+        <div style="font-size:13px;color:#888;">논문 로딩중...</div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="card">
+        <div class="card-title">트렌드 키워드</div>
+        <div id="trendKw"><div style="font-size:12px;color:#888;">로딩중...</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">주제별 분포</div>
+        <div style="position:relative;width:100%;height:130px;">
+          <canvas id="topicChart" role="img" aria-label="카테고리 분포"></canvas>
+        </div>
+        <div id="topicLegend" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">기관별 논문 현황</div>
+      <div id="instList"><div style="font-size:12px;color:#888;">로딩중...</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">주목 저자</div>
+      <div id="authorList"><div style="font-size:12px;color:#888;">로딩중...</div></div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">AI 논문 분석 에이전트</div>
+      <div style="font-size:12px;color:#888;margin-bottom:10px;">논문 제목, arXiv ID, 또는 트렌드 질문을 입력하세요</div>
+      <div class="ai-chat">
+        <div class="ai-input-row">
+          <input id="aiInput" class="ai-input" type="text" placeholder="예: 이번 주 핫한 주제는? / 2401.12345 요약해줘" />
+          <button class="ai-btn" onclick="askAgent()">분석 ↗</button>
+        </div>
+        <div class="ai-result" id="aiResult">질문을 입력하면 AI가 논문 데이터를 분석해드립니다.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">주간 메일 미리보기</div>
+      <div class="email-preview">
+        <div class="email-header" id="emailHeader">📬 매주 월요일 08:00 자동 발송</div>
+        <div class="email-body" id="emailBody">
+          <div class="email-section">로딩중...</div>
+        </div>
+      </div>
+      <button style="margin-top:10px;width:100%;font-size:12px;padding:8px;border:0.5px solid #ccc;border-radius:8px;background:#fff;cursor:pointer;" onclick="sendTestEmail()">✉ 테스트 메일 발송</button>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:0;">
+    <div class="card-title">월별 키워드 히트맵</div>
+    <div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;">
+      <div style="display:flex;flex-direction:column;gap:6px;min-width:100px;" id="heatmapLabels"></div>
+      <div style="flex:1;">
+        <div id="heatmapContainer"></div>
+        <div id="heatmapMonths" style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:#888;"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
+        <div style="font-size:10px;color:#888;">낮음</div>
+        <div style="display:flex;flex-direction:column;gap:2px;">
+          <div style="width:12px;height:12px;border-radius:2px;background:#EAF3DE;"></div>
+          <div style="width:12px;height:12px;border-radius:2px;background:#97C459;"></div>
+          <div style="width:12px;height:12px;border-radius:2px;background:#3B6D11;"></div>
+        </div>
+        <div style="font-size:10px;color:#888;">높음</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let currentRange = '7d';
+let statsData = null;
+const catColors = ['#378ADD','#7F77DD','#1D9E75','#EF9F27','#E24B4A','#D4537E','#888780'];
+const kwColors = ['#378ADD','#1D9E75','#7F77DD','#EF9F27','#D4537E','#888780'];
+const heatColors = ['#EAF3DE','#C0DD97','#97C459','#639922','#3B6D11','#27500A'];
+const heatKeywords = ['reasoning','learning','model','agent','safety'];
+let trendChart = null;
+let topicChart = null;
+
+async function loadStats() {
+  try {
+    const res = await fetch('/api/stats?range=' + currentRange);
+    statsData = await res.json();
+    renderAll(statsData);
+    document.getElementById('liveStatus').textContent = '● live';
+    document.getElementById('liveStatus').style.background = '#EAF3DE';
+    document.getElementById('liveStatus').style.color = '#3B6D11';
+  } catch(e) {
+    document.getElementById('liveStatus').textContent = '● 오류';
+  }
+}
+
+function renderAll(d) {
+  document.getElementById('m1').textContent = d.total.toLocaleString();
+  document.getElementById('m2').textContent = d.hot_papers.toLocaleString();
+  document.getElementById('m3').textContent = d.unique_authors.toLocaleString();
+  document.getElementById('m4').textContent = d.avg_citations;
+  renderTrendChart(d.daily);
+  renderTopicChart(d.categories);
+  renderPapers(d.top_papers);
+  renderKeywords(d.keywords);
+  renderInstitutions(d.orgs);
+  renderAuthors(d.authors);
+  renderHeatmap(d.heatmap);
+  renderEmail(d);
+}
+
+function renderTrendChart(daily) {
+  const labels = Object.keys(daily).slice(-14);
+  const values = labels.map(k => daily[k]);
+  if (trendChart) trendChart.destroy();
+  trendChart = new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        borderColor: '#185FA5',
+        backgroundColor: 'rgba(24,95,165,0.08)',
+        fill: true, tension: 0.4, pointRadius: 3,
+        pointBackgroundColor: '#185FA5', borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 10 }, color: '#888', maxRotation: 45 } },
+        y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 10 }, color: '#888' } }
+      }
+    }
+  });
+}
+
+function renderTopicChart(cats) {
+  const labels = Object.keys(cats);
+  const values = Object.values(cats);
+  const total = values.reduce((a,b) => a+b, 0);
+  if (topicChart) topicChart.destroy();
+  topicChart = new Chart(document.getElementById('topicChart'), {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{ data: values, backgroundColor: catColors.slice(0, labels.length), borderWidth: 0 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { display: false } } }
+  });
+  const legend = document.getElementById('topicLegend');
+  legend.innerHTML = labels.map((l,i) =>
+    `<span style="display:flex;align-items:center;gap:4px;font-size:11px;color:#888;">
+      <span style="width:8px;height:8px;border-radius:2px;background:${catColors[i]};display:inline-block;"></span>
+      ${l} ${Math.round(values[i]/total*100)}%
+    </span>`
+  ).join('');
+}
+
+function renderPapers(papers) {
+  const list = document.getElementById('paperList');
+  if (!papers || papers.length === 0) { list.innerHTML = '<div style="font-size:13px;color:#888;">논문 없음</div>'; return; }
+  list.innerHTML = papers.slice(0,5).map(p => {
+    const tagClass = 'tag-default';
+    const hot = p.citations > 50 ? 'cite-hot' : '';
+    return `<div class="paper" onclick="window.open('${p.url}','_blank')">
+      <div class="paper-title">${p.title}</div>
+      <div class="paper-meta">
+        <span class="paper-authors">${p.authors}</span>
+        <span class="paper-tag tag-default">${p.category}</span>
+        <span class="cite ${hot}">↑ ${p.citations} citations</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderKeywords(keywords) {
+  const el = document.getElementById('trendKw');
+  if (!keywords || keywords.length === 0) return;
+  const max = keywords[0][1];
+  el.innerHTML = keywords.slice(0,6).map(([kw, cnt], i) => {
+    const pct = Math.round(cnt / max * 100);
+    return `<div class="trend-row">
+      <span class="trend-kw">${kw}</span>
+      <div class="trend-bar-wrap"><div class="trend-bar" style="width:${pct}%;background:${kwColors[i]};"></div></div>
+      <span class="trend-pct">${cnt}회</span>
+    </div>`;
+  }).join('');
+}
+
+function renderInstitutions(orgs) {
+  const el = document.getElementById('instList');
+  const entries = Object.entries(orgs).filter(([,v]) => v > 0).sort((a,b) => b[1]-a[1]);
+  if (entries.length === 0) { el.innerHTML = '<div style="font-size:12px;color:#888;">데이터 없음</div>'; return; }
+  const max = entries[0][1];
+  el.innerHTML = entries.slice(0,6).map(([name, cnt], i) =>
+    `<div class="inst-row">
+      <span class="inst-name">${name}</span>
+      <div class="inst-bar-wrap"><div class="inst-bar" style="width:${Math.round(cnt/max*100)}%;background:${catColors[i]};"></div></div>
+      <span class="inst-n">${cnt}</span>
+    </div>`
+  ).join('');
+}
+
+function renderAuthors(authors) {
+  const el = document.getElementById('authorList');
+  if (!authors || authors.length === 0) { el.innerHTML = '<div style="font-size:12px;color:#888;">데이터 없음</div>'; return; }
+  const bgColors = ['#E6F1FB','#EEEDFE','#E1F5EE','#FAEEDA','#FBEAF0'];
+  const txtColors = ['#0C447C','#3C3489','#085041','#633806','#72243E'];
+  el.innerHTML = authors.slice(0,5).map(([name, cnt], i) => {
+    const initials = name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+    return `<div class="author-row">
+      <div class="avatar" style="background:${bgColors[i]};color:${txtColors[i]};">${initials}</div>
+      <div class="author-info">
+        <div class="author-name">${name}</div>
+      </div>
+      <div class="author-count">${cnt}편</div>
+    </div>`;
+  }).join('');
+}
+
+function renderHeatmap(heatmap) {
+  if (!heatmap) return;
+  const container = document.getElementById('heatmapContainer');
+  const labels = document.getElementById('heatmapLabels');
+  const months = document.getElementById('heatmapMonths');
+  container.innerHTML = '';
+  labels.innerHTML = '';
+  const keywords = Object.keys(heatmap);
+  const monthKeys = heatmap[keywords[0]] ? Object.keys(heatmap[keywords[0]]) : [];
+  months.innerHTML = monthKeys.map(m => `<span>${m.slice(5)}</span>`).join('');
+  keywords.forEach(kw => {
+    labels.innerHTML += `<div style="font-size:11px;color:#888;height:14px;line-height:14px;">${kw}</div>`;
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:3px;';
+    monthKeys.forEach(m => {
+      const v = heatmap[kw][m] || 0;
+      const idx = Math.min(Math.floor(v / 3), heatColors.length - 1);
+      const cell = document.createElement('div');
+      cell.style.cssText = `flex:1;height:14px;border-radius:2px;background:${heatColors[idx]};`;
+      cell.title = `${kw} · ${m}: ${v}회`;
+      row.appendChild(cell);
+    });
+    container.appendChild(row);
+  });
+}
+
+function renderEmail(d) {
+  const now = new Date();
+  const week = Math.ceil(now.getDate() / 7);
+  document.getElementById('emailHeader').textContent = `📬 매주 월요일 08:00 자동 발송`;
+  const top3 = (d.top_papers || []).slice(0,3);
+  const kws = (d.keywords || []).slice(0,2).map(k => k[0]).join(', ');
+  document.getElementById('emailBody').innerHTML = `
+    <div class="email-section">📊 AI 연구 동향 (${now.getFullYear()}년 ${now.getMonth()+1}월 ${week}주차)</div>
+    총 <b>${d.total}편</b> 논문 · 주목 키워드: <b>${kws}</b>
+    <div class="email-section">🔥 이주의 논문 TOP 3</div>
+    ${top3.map((p,i) => `${i+1}. ${p.title.slice(0,40)}... (${p.citations} citations)`).join('<br>')}
+  `;
+}
+
+function setRange(btn, range) {
+  document.querySelectorAll('.ctrl-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentRange = range;
+  loadStats();
+}
+
+function switchTab(el, type) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+  if (!statsData) return;
+  if (type === 'new') {
+    const sorted = [...statsData.top_papers].sort((a,b) => new Date(b.published) - new Date(a.published));
+    renderPapers(sorted);
+  } else {
+    renderPapers(statsData.top_papers);
+  }
+}
+
+async function askAgent() {
+  const q = document.getElementById('aiInput').value.trim();
+  if (!q) return;
+  const result = document.getElementById('aiResult');
+  result.innerHTML = '<span class="loading">AI가 분석 중입니다...</span>';
+  try {
+    const res = await fetch('/api/agent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: q })
+    });
+    const data = await res.json();
+    result.textContent = data.answer;
+  } catch(e) {
+    result.textContent = '오류가 발생했습니다. 다시 시도해주세요.';
+  }
+}
+
+async function refreshPapers() {
+  document.getElementById('liveStatus').textContent = '● 수집중';
+  await fetch('/api/collect', { method: 'POST' });
+  await loadStats();
+}
+
+async function sendTestEmail() {
+  const res = await fetch('/api/send_email', { method: 'POST' });
+  const data = await res.json();
+  alert(data.message);
+}
+
+document.getElementById('aiInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') askAgent();
+});
+
+loadStats();
+setInterval(loadStats, 300000);
+</script>
+</body>
+</html>
