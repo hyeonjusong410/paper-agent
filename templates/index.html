@@ -395,7 +395,7 @@ function renderHeatmap(heatmap) {
 function renderEmail(d) {
   const now = new Date();
   const week = Math.ceil(now.getDate() / 7);
-  document.getElementById('emailHeader').textContent = `📬 매주 월요일 08:00 자동 발송`;
+  document.getElementById('emailHeader').textContent = `📬 매주 금요일 08:00 자동 발송`;
   const top3 = (d.top_papers || []).slice(0,3);
   const kws = (d.keywords || []).slice(0,2).map(k => k[0]).join(', ');
   document.getElementById('emailBody').innerHTML = `

@@ -1,13 +1,12 @@
 from flask import Flask, jsonify, render_template, request
-import sqlite3
 import pandas as pd
 from collections import Counter
 from collector import fetch_arxiv_papers, save_papers
-import re
 from agent import run_agent
 import os
 from mailer import send_email
 from apscheduler.schedulers.background import BackgroundScheduler
+import psycopg2
 
 app = Flask(__name__)
 
@@ -15,8 +14,11 @@ app = Flask(__name__)
 from collector import init_db
 init_db()
 
+def get_conn():
+    return psycopg2.connect(os.environ.get("DATABASE_URL"))
+
 def get_df(days=7):
-    conn = sqlite3.connect("papers.db")
+    conn = get_conn()
     df = pd.read_sql("SELECT * FROM papers", conn)
     conn.close()
     df["published"] = pd.to_datetime(df["published"])
@@ -167,20 +169,19 @@ def collect():
     return jsonify({"message": "수집 완료"})
 
 @app.route("/api/send_email", methods=["POST"])
-def send_email():
+def send_email_route():
     return jsonify({"message": "메일 발송 기능은 곧 추가됩니다!"})
 
 scheduler = BackgroundScheduler()
 
-# 매일 오전 9시 논문 자동 수집
+# 매일 오전 0시 논문 자동 수집
 scheduler.add_job(
     lambda: save_papers(fetch_arxiv_papers()),
     trigger="cron",
-    hour=9,
+    hour=0,
     minute=0
 )
 
-# 매주 금요일 오전 9시 메일 자동 발송
 scheduler.add_job(
     lambda: send_email(
         to_email=os.environ.get("MAIL_TO"),
@@ -189,7 +190,7 @@ scheduler.add_job(
     ),
     trigger="cron",
     day_of_week="fri",
-    hour=9,
+    hour=6, 
     minute=0
 )
 

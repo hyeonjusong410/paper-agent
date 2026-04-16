@@ -1,11 +1,20 @@
 import arxiv
-import sqlite3
-import requests
+import psycopg2
+import os
 from datetime import datetime
+from dotenv import load_dotenv
+
+load_dotenv()
+
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+def get_conn():
+    return psycopg2.connect(DATABASE_URL)
 
 def init_db():
-    conn = sqlite3.connect("papers.db")
-    conn.execute("""
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS papers (
             id TEXT PRIMARY KEY,
             title TEXT,
@@ -18,15 +27,16 @@ def init_db():
         )
     """)
     conn.commit()
-    return conn
+    cur.close()
+    conn.close()
 
 def fetch_arxiv_papers(max_results=300):
     client = arxiv.Client()
     search = arxiv.Search(
-    query="cat:cs.AI OR cat:cs.LG OR cat:cs.CL",
-    max_results=300,  
-    sort_by=arxiv.SortCriterion.SubmittedDate
-)
+        query="cat:cs.AI OR cat:cs.LG OR cat:cs.CL",
+        max_results=max_results,
+        sort_by=arxiv.SortCriterion.SubmittedDate
+    )
     papers = []
     for result in client.results(search):
         papers.append({
@@ -40,28 +50,22 @@ def fetch_arxiv_papers(max_results=300):
         })
     return papers
 
-def get_citation_count(arxiv_id):
-    url = f"https://api.semanticscholar.org/graph/v1/paper/arXiv:{arxiv_id}"
-    try:
-        res = requests.get(url, params={"fields": "citationCount"}, timeout=5)
-        return res.json().get("citationCount", 0)
-    except:
-        return 0
-
 def save_papers(papers):
-    conn = init_db()
+    conn = get_conn()
+    cur = conn.cursor()
     for p in papers:
-        citations = get_citation_count(p["id"])
-        conn.execute("""
-            INSERT OR REPLACE INTO papers
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        cur.execute("""
+            INSERT INTO papers (id, title, authors, abstract, category, published, citations, url)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (id) DO NOTHING
         """, (p["id"], p["title"], p["authors"], p["abstract"],
-              p["category"], p["published"], citations, p["url"]))
+              p["category"], p["published"], 0, p["url"]))
     conn.commit()
+    cur.close()
     conn.close()
     print(f"✅ {len(papers)}편 저장 완료")
 
 if __name__ == "__main__":
-    print("논문 수집 시작...")
+    init_db()
     papers = fetch_arxiv_papers()
     save_papers(papers)
