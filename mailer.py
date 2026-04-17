@@ -106,12 +106,41 @@ def build_email_html():
     else:
         major_rows = "<div style='font-size:12px;color:#888;'>이번 주 주요 기관 논문 없음</div>"
 
-    html = f"""
-    <html><body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px;color:#1a1a1a;">
-        <h2 style="color:#185FA5;margin-bottom:4px;">📡 PaperAgent 주간 AI 논문 트렌드</h2>
-        <p style="color:#888;font-size:12px;margin-bottom:20px;">{now.year}년 {now.month}월 {week}주차</p>
-        <div style="background:#E6F1FB;border-radius:8px;padding:14px;margin-bottom:24px;">
-            <div style="font-size:11px;color:#185FA5;font-weight:600;margin-bottom:6px;">💡 이번 주 동향 요약</div>
-            <div style="font-size:13px;color:#0C447C;line-height:1.6;">{weekly_summary}</div>
-        </div>
-        <h3 style="font-size:14px;margin-bottom:12px;">🔥 트렌드 논문
+    html = (
+        "<html><body style='font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px;color:#1a1a1a;'>"
+        f"<h2 style='color:#185FA5;margin-bottom:4px;'>📡 PaperAgent 주간 AI 논문 트렌드</h2>"
+        f"<p style='color:#888;font-size:12px;margin-bottom:20px;'>{now.year}년 {now.month}월 {week}주차</p>"
+        "<div style='background:#E6F1FB;border-radius:8px;padding:14px;margin-bottom:24px;'>"
+        "<div style='font-size:11px;color:#185FA5;font-weight:600;margin-bottom:6px;'>💡 이번 주 동향 요약</div>"
+        f"<div style='font-size:13px;color:#0C447C;line-height:1.6;'>{weekly_summary}</div>"
+        "</div>"
+        "<h3 style='font-size:14px;margin-bottom:12px;'>🔥 트렌드 논문 TOP 3</h3>"
+        f"{trend_rows}"
+        "<h3 style='font-size:14px;margin-bottom:12px;'>🏛️ 주요 기관 논문</h3>"
+        f"{major_rows}"
+        "<hr style='border:none;border-top:1px solid #eee;margin:20px 0;'>"
+        "<p style='color:#888;font-size:11px;'>PaperAgent · 매주 금요일 자동 발송</p>"
+        "</body></html>"
+    )
+    return html
+
+def send_email(to_email: str, gmail_address: str, gmail_password: str):
+    html = build_email_html()
+    now = datetime.now()
+    week = (now.day - 1) // 7 + 1
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = f"📡 PaperAgent 주간 AI 트렌드 — {now.year}년 {now.month}월 {week}주차"
+    msg["From"] = gmail_address
+    msg["To"] = to_email
+    msg.attach(MIMEText(html, "html"))
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        server.login(gmail_address, gmail_password)
+        server.sendmail(gmail_address, to_email, msg.as_string())
+    print(f"✅ 메일 발송 완료 → {to_email}")
+
+if __name__ == "__main__":
+    send_email(
+        to_email=os.environ.get("MAIL_TO"),
+        gmail_address=os.environ.get("GMAIL_ADDRESS"),
+        gmail_password=os.environ.get("GMAIL_PASSWORD")
+    )
