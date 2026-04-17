@@ -132,8 +132,11 @@ def stats():
     df["score"] = df["abstract"].apply(lambda x: keyword_score(x)[0])
     df["matched_kw"] = df["abstract"].apply(lambda x: keyword_score(x)[1])
 
-    top_papers = df[df["score"] > 0].nlargest(20, "score")[
-        ["title","authors","category","citations","url","published","score","matched_kw"]
+    df["clicks"] = df["clicks"].fillna(0)
+    df["final_score"] = df["score"] * 0.6 + df["clicks"] * 0.4
+
+    top_papers = df[df["final_score"] > 0].nlargest(20, "final_score")[
+        ["title","authors","category","citations","url","published","score","final_score","matched_kw","clicks"]
     ].to_dict("records")
     for p in top_papers:
         p["published"] = str(p["published"])[:10]
@@ -162,6 +165,20 @@ def agent():
     query = request.json.get("query", "")
     answer = run_agent(query)
     return jsonify({"answer": answer})
+
+@app.route("/api/click", methods=["POST"])
+def click_paper():
+    paper_id = request.json.get("paper_id", "")
+    try:
+        conn = get_conn()
+        cur = conn.cursor()
+        cur.execute("UPDATE papers SET clicks = clicks + 1 WHERE id = %s", (paper_id,))
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print(f"클릭 기록 오류: {e}")
+    return jsonify({"message": "ok"})
 
 @app.route("/api/collect", methods=["POST"])
 def collect():
