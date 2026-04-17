@@ -309,7 +309,7 @@ function renderPapers(papers) {
   list.innerHTML = papers.slice(0,5).map(p => {
     const tagClass = 'tag-default';
     const hot = p.citations > 50 ? 'cite-hot' : '';
-    return `<div class="paper" onclick="window.open('${p.url}','_blank')">
+    return `<div class="paper" onclick="clickPaper('${p.id}', '${p.url}')">
       <div class="paper-title">${p.title}</div>
       <div class="paper-meta">
         <span class="paper-authors">${p.authors}</span>
@@ -459,6 +459,14 @@ document.getElementById('aiInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') askAgent();
 });
 
+async function clickPaper(id, url) {
+  await fetch('/api/click', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ paper_id: id })
+  });
+  window.open(url, '_blank');
+}
 loadStats();
 setInterval(loadStats, 300000);
 </script>
