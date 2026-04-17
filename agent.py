@@ -1,8 +1,8 @@
 import time
 import os
-import google.generativeai as genai
 import psycopg2
 import pandas as pd
+from google import genai
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -19,8 +19,7 @@ def get_papers_for_analysis():
     return df
 
 def run_agent(user_query: str) -> str:
-    genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-    model = genai.GenerativeModel("gemini-2.0-flash")
+    client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
     df = get_papers_for_analysis()
     papers_text = ""
@@ -32,5 +31,8 @@ def run_agent(user_query: str) -> str:
 질문: {user_query}"""
 
     time.sleep(2)
-    response = model.generate_content(prompt)
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=prompt
+    )
     return response.text
